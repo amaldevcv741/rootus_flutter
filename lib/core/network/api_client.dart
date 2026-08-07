@@ -1,17 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'dart:io';
 
 class ApiClient {
-  // If testing on Android emulator, use 10.0.2.2. 
-  // If testing on iOS simulator, use localhost or 127.0.0.1.
-  // Assuming your Node.js server will run on port 3000.
-  static final String _baseUrl = Platform.isAndroid 
-      ? 'http://10.0.2.2:3000/v1' 
-      : 'http://localhost:3000/v1';
+  // Uses adb reverse to map device localhost to PC localhost
+  static const String baseUrl = 'http://127.0.0.1:3000';
 
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: _baseUrl,
+      baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {
@@ -19,7 +15,17 @@ class ApiClient {
         'Accept': 'application/json',
       },
     ),
-  );
+  )..interceptors.add(
+      LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: false,
+        responseBody: true,
+        error: true,
+        logPrint: (object) => debugPrint('🌐 [API LOG] $object'),
+      ),
+    );
 
   Dio get dio => _dio;
 }

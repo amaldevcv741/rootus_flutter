@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "631308676623",
+    "project_id": "rootus-farms",
+    "storage_bucket": "rootus-farms.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:631308676623:android:f65783908d4e2eb3eb3d7a",
+        "android_client_info": {
+          "package_name": "com.rootus.fresh_farmapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUPFSD_Fx0C0Ho1aPsQS1uP1XXMFmFJ48"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
