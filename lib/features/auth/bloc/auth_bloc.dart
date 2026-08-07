@@ -45,6 +45,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           address: event.address,
           email: event.email,
           password: event.password,
+          profileImage: event.profileImage,
+          latitude: event.latitude,
+          longitude: event.longitude,
         );
         if (user != null) {
           emit(Authenticated(user));

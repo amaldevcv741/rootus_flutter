@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,8 @@ class AppUser {
   final String address;
   final String email;
   final String? profileImageUrl;
+  final double? latitude;
+  final double? longitude;
 
   AppUser({
     required this.id,
@@ -19,6 +22,8 @@ class AppUser {
     required this.address,
     required this.email,
     this.profileImageUrl,
+    this.latitude,
+    this.longitude,
   });
 
   AppUser copyWith({
@@ -28,6 +33,8 @@ class AppUser {
     String? address,
     String? email,
     String? profileImageUrl,
+    double? latitude,
+    double? longitude,
   }) {
     return AppUser(
       id: id ?? this.id,
@@ -36,6 +43,8 @@ class AppUser {
       address: address ?? this.address,
       email: email ?? this.email,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
@@ -47,6 +56,8 @@ class AppUser {
       address: json['address'] ?? '',
       email: json['email'] ?? '',
       profileImageUrl: json['profileImageUrl'],
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 
@@ -57,6 +68,8 @@ class AppUser {
         'address': address,
         'email': email,
         'profileImageUrl': profileImageUrl,
+        'latitude': latitude,
+        'longitude': longitude,
       };
 }
 
@@ -106,6 +119,9 @@ class AuthRepository {
     required String address,
     String? email,
     required String password,
+    File? profileImage,
+    double? latitude,
+    double? longitude,
   }) async {
     debugPrint('📝 [AUTH REPO] Attempting registration for phone: $phone');
     try {
@@ -117,13 +133,41 @@ class AuthRepository {
           'address': address,
           'email': email ?? '',
           'password': password,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
         },
       );
 
       debugPrint('📝 [AUTH REPO] Register HTTP status: ${response.statusCode}');
 
       if (response.statusCode == 201) {
-        final user = AppUser.fromJson(response.data['user']);
+        var user = AppUser.fromJson(response.data['user']);
+        
+        // Upload profile image if provided
+        if (profileImage != null) {
+          try {
+            debugPrint('📝 [AUTH REPO] Uploading profile image for new user');
+            final formData = FormData.fromMap({
+              'image': await MultipartFile.fromFile(
+                profileImage.path,
+                filename: profileImage.path.split('/').last,
+              ),
+            });
+            
+            final imageResponse = await _apiClient.dio.post(
+              '/api/user/${user.id}/profile-image',
+              data: formData,
+            );
+            
+            if (imageResponse.statusCode == 200 && imageResponse.data['profileImageUrl'] != null) {
+              user = user.copyWith(profileImageUrl: imageResponse.data['profileImageUrl']);
+            }
+          } catch (imgError) {
+            debugPrint('⚠️ [AUTH REPO] Profile image upload failed during registration: $imgError');
+            // We don't throw here because registration itself succeeded.
+          }
+        }
+        
         await saveSession(user);
         debugPrint('✅ [AUTH REPO] Registration successful for user: ${user.fullName}');
         return user;
@@ -197,21 +241,27 @@ class AuthRepository {
     }
   }
 
-  Future<AppUser> changeAddress({
-    required AppUser currentUser,
-    required String newAddress,
-  }) async {
+  Future<AppUser?> changeAddress(String newAddress, {double? latitude, double? longitude}) async {
+    final currentUser = await getPersistedSession();
+    if (currentUser == null) throw Exception('Not logged in');
+
     try {
       final response = await _apiClient.dio.put(
         '/api/auth/change-address',
         data: {
           'userId': currentUser.id,
           'newAddress': newAddress,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
         },
       );
 
       if (response.statusCode == 200) {
-        final updatedUser = currentUser.copyWith(address: newAddress);
+        final updatedUser = currentUser.copyWith(
+          address: newAddress,
+          latitude: latitude ?? currentUser.latitude,
+          longitude: longitude ?? currentUser.longitude,
+        );
         await saveSession(updatedUser);
         return updatedUser;
       }

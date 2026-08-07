@@ -4,9 +4,10 @@ import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/bloc/auth_event.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../core/presentation/widgets/logout_button.dart';
 import '../../../core/presentation/widgets/app_dialogs.dart';
+import '../../auth/presentation/map_selection_screen.dart';
 import '../../orders/presentation/orders_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/network/api_client.dart';
@@ -24,6 +25,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _addressController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+  bool _isUploading = false;
+  double? _newLatitude;
+  double? _newLongitude;
 
   @override
   void dispose() {
@@ -142,6 +146,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showChangeAddressDialog(BuildContext context, AppUser user) {
     _addressController.text = user.address;
+    _newLatitude = user.latitude;
+    _newLongitude = user.longitude;
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -167,7 +173,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                maxLines: 3,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              StatefulBuilder(
+                builder: (context, setStateLocal) {
+                  return ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MapSelectionScreen(
+                            initialLatitude: _newLatitude,
+                            initialLongitude: _newLongitude,
+                          ),
+                        ),
+                      );
+
+                      if (result != null && result is Map<String, dynamic>) {
+                        setStateLocal(() {
+                          _newLatitude = result['latitude'];
+                          _newLongitude = result['longitude'];
+                        });
+                        _addressController.text = result['address'];
+                      }
+                    },
+                    icon: const Icon(Icons.map, color: Colors.white),
+                    label: const Text('Choose on Map', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                }
               ),
             ],
           ),
@@ -196,10 +235,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     });
                     try {
                       final updatedUser = await context.read<AuthRepository>().changeAddress(
-                            currentUser: user,
-                            newAddress: _addressController.text,
+                            _addressController.text,
+                            latitude: _newLatitude,
+                            longitude: _newLongitude,
                           );
-                      if (mounted) {
+                      if (mounted && updatedUser != null) {
                         context.read<AuthBloc>().add(UpdateUserSession(updatedUser));
                         Navigator.pop(dialogContext);
                         AppDialogs.showSuccessToast(context, 'Address updated successfully');

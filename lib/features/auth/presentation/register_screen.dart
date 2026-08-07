@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'map_selection_screen.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -24,8 +25,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  bool _isFetchingLocation = false;
-
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+  
+  double? _latitude;
+  double? _longitude;
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -37,81 +41,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchCurrentLocation() async {
-    setState(() => _isFetchingLocation = true);
-
+  Future<void> _pickImage() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location services are disabled.')),
-          );
-        }
-        setState(() => _isFetchingLocation = false);
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final File file = File(pickedFile.path);
+        final int fileSizeInBytes = file.lengthSync();
+        
+        // Check if file is greater than 4MB
+        if (fileSizeInBytes > 4 * 1024 * 1024) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permission denied.')),
+              const SnackBar(
+                content: Text('Image must be less than 4 MB.'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
-          setState(() => _isFetchingLocation = false);
           return;
         }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Location permissions permanently denied.')),
-          );
-        }
-        setState(() => _isFetchingLocation = false);
-        return;
-      }
-
-      final Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-
-      final List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        final Placemark place = placemarks.first;
-        final String formattedAddress = [
-          place.street,
-          place.subLocality,
-          place.locality,
-          place.postalCode,
-          place.country
-        ].where((e) => e != null && e.isNotEmpty).join(', ');
 
         setState(() {
-          _addressController.text = formattedAddress;
+          _profileImage = file;
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch location: $e')),
+          SnackBar(content: Text('Failed to pick image: $e')),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isFetchingLocation = false);
-      }
+    }
+  }
+
+  Future<void> _openMapSelection() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapSelectionScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+        ),
+      ),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _latitude = result['latitude'];
+        _longitude = result['longitude'];
+        _addressController.text = result['address'];
+      });
     }
   }
 
@@ -139,6 +118,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ? _emailController.text.trim()
                   : null,
               password: _passwordController.text.trim(),
+              profileImage: _profileImage,
+              latitude: _latitude,
+              longitude: _longitude,
             ),
           );
     }
@@ -168,11 +150,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
         },
         builder: (context, state) {
-          if (state is AuthLoading) {
-            return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary));
-          }
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Form(
@@ -180,7 +157,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.person_add, size: 70, color: AppColors.primary),
+                  Center(
+                    child: GestureDetector(
+                      onTap: state is AuthLoading ? null : _pickImage,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : null,
+                            child: _profileImage == null
+                                ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
+                                : null,
+                          ),
+                          if (state is AuthLoading)
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black54,
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(color: AppColors.primary),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _fullNameController,
@@ -207,28 +214,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _addressController,
-                    maxLines: 2,
-                    decoration: InputDecoration(
-                      labelText: 'Delivery Address *',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.home),
-                      suffixIcon: IconButton(
-                        icon: _isFetchingLocation
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.my_location, color: AppColors.primary),
-                        onPressed:
-                            _isFetchingLocation ? null : _fetchCurrentLocation,
-                        tooltip: 'Fetch Current Location',
-                      ),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _addressController,
+                            decoration: const InputDecoration(
+                              labelText: 'Delivery Address *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.home),
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Enter delivery address' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 56, // Keep it square-ish
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            border: Border.all(color: AppColors.primary),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.map, color: AppColors.primary),
+                            onPressed: _openMapSelection,
+                            tooltip: 'Choose on Map',
+                          ),
+                        ),
+                      ],
                     ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Enter delivery address' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -275,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: _onRegisterPressed,
+                    onPressed: state is AuthLoading ? null : _onRegisterPressed,
                     child: const Text('REGISTER',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),

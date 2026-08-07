@@ -42,6 +42,33 @@ class _SplashScreenState extends State<SplashScreen> {
                 const Icon(Icons.broken_image, size: 100, color: Colors.white54),
             ),
             const SizedBox(height: 24),
+            RichText(
+              textAlign: TextAlign.center,
+              text: const TextSpan(
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
+                children: [
+                  TextSpan(text: 'BETWEEN '),
+                  TextSpan(
+                    text: 'YOU',
+                    style: TextStyle(color: AppColors.secondary),
+                  ),
+                  TextSpan(text: ' AND DIRT'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            const SizedBox(
+              width: 150,
+              child: LinearProgressIndicator(
+                backgroundColor: Colors.white12,
+                color: AppColors.primary,
+              ),
+            ),
           ],
         ),
       ),

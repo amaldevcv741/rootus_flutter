@@ -18,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -85,28 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Image.asset(
-                          'assets/logo.png',
+                          'assets/logo_2.png',
                           width: 80,
                           height: 80,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(Icons.broken_image, size: 80, color: Colors.white54),
-                        ),
-                        const SizedBox(height: 12),
-                        RichText(
-                          textAlign: TextAlign.center,
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            children: [
-                              TextSpan(text: 'ROOT'),
-                              TextSpan(text: 'U', style: TextStyle(color: AppColors.secondary)),
-                              TextSpan(text: 'S'),
-                            ],
-                          ),
                         ),
                         const SizedBox(height: 6),
                         const Text(
@@ -133,11 +118,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _passwordController,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock, color: AppColors.primary),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                color: Colors.white70,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                         ),
                         const SizedBox(height: 28),
                         ElevatedButton(
