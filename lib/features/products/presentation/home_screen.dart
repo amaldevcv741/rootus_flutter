@@ -109,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppColors.primary,
               child: GridView.builder(
                 controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,

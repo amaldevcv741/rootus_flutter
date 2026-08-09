@@ -28,7 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
 
   String? _selectedAvatarUrl;
-  
+
   double? _latitude;
   double? _longitude;
   @override
@@ -101,7 +101,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         child: CircleAvatar(
-                          backgroundImage: NetworkImage(ApiClient.baseUrl + avatarUrl),
+                          backgroundImage:
+                              NetworkImage(ApiClient.baseUrl + avatarUrl),
                         ),
                       ),
                     );
@@ -148,7 +149,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       final inputPhone = _phoneController.text.trim();
-      final fullPhone = inputPhone.startsWith('+') ? inputPhone : '+91$inputPhone';
+      final fullPhone =
+          inputPhone.startsWith('+') ? inputPhone : '+91$inputPhone';
 
       context.read<AuthBloc>().add(
             SignUpRequested(
@@ -172,8 +174,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
@@ -200,17 +202,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Center(
                     child: GestureDetector(
-                      onTap: state is AuthLoading ? null : _showAvatarSelectionBottomSheet,
+                      onTap: state is AuthLoading
+                          ? null
+                          : _showAvatarSelectionBottomSheet,
                       child: Stack(
                         children: [
                           CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.grey[200],
                             backgroundImage: _selectedAvatarUrl != null
-                                ? NetworkImage(ApiClient.baseUrl + _selectedAvatarUrl!)
+                                ? NetworkImage(
+                                    ApiClient.baseUrl + _selectedAvatarUrl!)
                                 : null,
                             child: _selectedAvatarUrl == null
-                                ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                                ? const Icon(Icons.person,
+                                    size: 40, color: Colors.grey)
                                 : null,
                           ),
                           if (state is AuthLoading)
@@ -222,7 +228,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 color: Colors.black54,
                               ),
                               child: const Center(
-                                child: CircularProgressIndicator(color: AppColors.primary),
+                                child: CircularProgressIndicator(
+                                    color: AppColors.primary),
                               ),
                             ),
                         ],
@@ -248,11 +255,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.phone),
                       prefixText: '+91 ',
+                      counterText: '',
                     ),
                     keyboardType: TextInputType.phone,
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Enter mobile number'
-                        : null,
+                    maxLength: 10,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Enter mobile number';
+                      }
+                      if (v.trim().length != 10) {
+                        return 'Number must be exactly 10 digits';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   IntrinsicHeight(
@@ -267,8 +282,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.home),
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Enter delivery address' : null,
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'Enter delivery address'
+                                : null,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -280,7 +296,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.map, color: AppColors.primary),
+                            icon:
+                                const Icon(Icons.map, color: AppColors.primary),
                             onPressed: _openMapSelection,
                             tooltip: 'Choose on Map',
                           ),
@@ -307,7 +324,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: Colors.grey,
                         ),
                         onPressed: () {
@@ -318,8 +337,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     obscureText: _obscurePassword,
-                    validator: (v) =>
-                        v == null || v.length < 6 ? 'Password must be at least 6 characters' : null,
+                    validator: (v) => v == null || v.length < 6
+                        ? 'Password must be at least 6 characters'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -330,7 +350,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: Colors.grey,
                         ),
                         onPressed: () {
@@ -341,9 +363,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     obscureText: _obscureConfirmPassword,
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Confirm your password'
-                        : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Confirm your password' : null,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
@@ -357,7 +378,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     onPressed: state is AuthLoading ? null : _onRegisterPressed,
                     child: const Text('REGISTER',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),

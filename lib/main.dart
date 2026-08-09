@@ -82,7 +82,7 @@ class AuthWrapper extends StatelessWidget {
           context.read<ProductBloc>().add(FetchProducts());
           return const MainLayout();
         }
-        if (state is AuthLoading || state is AuthInitial) {
+        if (state is AuthInitial) {
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(color: AppColors.secondary),

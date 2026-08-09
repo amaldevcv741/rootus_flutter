@@ -2,8 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
 class ApiClient {
-  // Uses adb reverse to map device localhost to PC localhost
-  // static const String baseUrl = 'https://mushroom-backend-jnks.onrender.com';
+  //static const String baseUrl = 'https://mushroom-backend-jnks.onrender.com';
   static const String baseUrl = 'http://127.0.0.1:3000'; // Local development
 
   final Dio _dio = Dio(
@@ -11,7 +10,6 @@ class ApiClient {
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-
       headers: {
         'Accept': 'application/json',
       },

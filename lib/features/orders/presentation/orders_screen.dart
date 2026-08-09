@@ -121,9 +121,23 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       color: AppColors.primary,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 200),
-                          Center(child: Text('No orders found.', style: TextStyle(color: Color(0xFF94A3B8)))),
+                        children: [
+                          const SizedBox(height: 150),
+                          Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.receipt_long_outlined,
+                                    size: 80,
+                                    color: const Color(0xFF94A3B8)
+                                        .withValues(alpha: 0.5)),
+                                const SizedBox(height: 16),
+                                const Text('No orders found',
+                                    style: TextStyle(
+                                        color: Color(0xFF94A3B8), fontSize: 18)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     );
