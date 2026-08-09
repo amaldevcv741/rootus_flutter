@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../../core/network/api_client.dart';
 import 'map_selection_screen.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -25,8 +24,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  File? _profileImage;
-  final ImagePicker _picker = ImagePicker();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  String? _selectedAvatarUrl;
   
   double? _latitude;
   double? _longitude;
@@ -41,37 +42,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        final File file = File(pickedFile.path);
-        final int fileSizeInBytes = file.lengthSync();
-        
-        // Check if file is greater than 4MB
-        if (fileSizeInBytes > 4 * 1024 * 1024) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Image must be less than 4 MB.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
+  void _showAvatarSelectionBottomSheet() {
+    final avatars = [
+      '/uploads/avatars/male_1.webp',
+      '/uploads/avatars/male_2.webp',
+      '/uploads/avatars/male_3.webp',
+      '/uploads/avatars/male_4.webp',
+      '/uploads/avatars/male_5.webp',
+      '/uploads/avatars/female_1.webp',
+      '/uploads/avatars/female_2.webp',
+      '/uploads/avatars/female_3.webp',
+      '/uploads/avatars/female_4.webp',
+      '/uploads/avatars/female_5.webp',
+    ];
 
-        setState(() {
-          _profileImage = file;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          height: 350,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Choose an Avatar',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: avatars.length,
+                  itemBuilder: (context, index) {
+                    final avatarUrl = avatars[index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedAvatarUrl = avatarUrl;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _selectedAvatarUrl == avatarUrl
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          backgroundImage: NetworkImage(ApiClient.baseUrl + avatarUrl),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         );
-      }
-    }
+      },
+    );
   }
 
   Future<void> _openMapSelection() async {
@@ -118,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ? _emailController.text.trim()
                   : null,
               password: _passwordController.text.trim(),
-              profileImage: _profileImage,
+              profileImageUrl: _selectedAvatarUrl,
               latitude: _latitude,
               longitude: _longitude,
             ),
@@ -159,17 +200,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Center(
                     child: GestureDetector(
-                      onTap: state is AuthLoading ? null : _pickImage,
+                      onTap: state is AuthLoading ? null : _showAvatarSelectionBottomSheet,
                       child: Stack(
                         children: [
                           CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.grey[200],
-                            backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!)
+                            backgroundImage: _selectedAvatarUrl != null
+                                ? NetworkImage(ApiClient.baseUrl + _selectedAvatarUrl!)
                                 : null,
-                            child: _profileImage == null
-                                ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
+                            child: _selectedAvatarUrl == null
+                                ? const Icon(Icons.person, size: 40, color: Colors.grey)
                                 : null,
                           ),
                           if (state is AuthLoading)
@@ -260,24 +301,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Password *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     validator: (v) =>
                         v == null || v.length < 6 ? 'Password must be at least 6 characters' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _confirmPasswordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Confirm Password *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock_outline),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     validator: (v) => v == null || v.isEmpty
                         ? 'Confirm your password'
                         : null,

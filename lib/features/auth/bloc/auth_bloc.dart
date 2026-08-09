@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
+import '../../../../core/network/error_handler.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository authRepository;
@@ -31,7 +32,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(const AuthError('Login failed: Invalid response'));
         }
       } catch (e) {
-        emit(AuthError(e.toString().replaceAll('Exception: ', '')));
+        emit(AuthError(ErrorHandler.clean(e)));
       }
     });
 
@@ -45,7 +46,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           address: event.address,
           email: event.email,
           password: event.password,
-          profileImage: event.profileImage,
+          profileImageUrl: event.profileImageUrl,
           latitude: event.latitude,
           longitude: event.longitude,
         );
@@ -55,7 +56,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(const AuthError('Registration failed: Invalid response'));
         }
       } catch (e) {
-        emit(AuthError(e.toString().replaceAll('Exception: ', '')));
+        emit(AuthError(ErrorHandler.clean(e)));
       }
     });
 
@@ -74,12 +75,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (state is Authenticated) {
         final currentUser = (state as Authenticated).user;
         try {
-          final imageUrl = await authRepository.uploadProfileImage(currentUser.id, event.imagePath);
+          final imageUrl = await authRepository.updateProfileImage(currentUser.id, event.profileImageUrl);
           final updatedUser = currentUser.copyWith(profileImageUrl: imageUrl);
           await authRepository.saveSession(updatedUser);
           emit(Authenticated(updatedUser));
         } catch (e) {
-          emit(AuthError(e.toString().replaceAll('Exception: ', '')));
+          emit(AuthError(ErrorHandler.clean(e)));
           emit(Authenticated(currentUser)); // Revert back to authenticated state
         }
       }

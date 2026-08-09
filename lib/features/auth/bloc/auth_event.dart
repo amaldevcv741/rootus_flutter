@@ -27,7 +27,7 @@ class SignUpRequested extends AuthEvent {
   final String address;
   final String? email;
   final String password;
-  final File? profileImage;
+  final String? profileImageUrl;
   final double? latitude;
   final double? longitude;
 
@@ -37,13 +37,13 @@ class SignUpRequested extends AuthEvent {
     required this.address,
     this.email,
     required this.password,
-    this.profileImage,
+    this.profileImageUrl,
     this.latitude,
     this.longitude,
   });
 
   @override
-  List<Object?> get props => [fullName, phone, address, email, password, profileImage, latitude, longitude];
+  List<Object?> get props => [fullName, phone, address, email, password, profileImageUrl, latitude, longitude];
 }
 
 class SignOutRequested extends AuthEvent {}
@@ -57,9 +57,9 @@ class UpdateUserSession extends AuthEvent {
 }
 
 class UpdateProfileImageRequested extends AuthEvent {
-  final String imagePath;
-  const UpdateProfileImageRequested(this.imagePath);
+  final String profileImageUrl;
+  const UpdateProfileImageRequested(this.profileImageUrl);
 
   @override
-  List<Object?> get props => [imagePath];
+  List<Object?> get props => [profileImageUrl];
 }

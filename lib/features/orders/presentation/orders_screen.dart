@@ -22,10 +22,36 @@ class _OrdersScreenState extends State<OrdersScreen> {
   String _selectedStatus = 'All';
   final List<String> _statuses = ['All', 'Pending Confirmation', 'Processing', 'Partially Accepted', 'Accepted', 'Rejected', 'Canceled'];
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _fetchOrders();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_isBottom) {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is Authenticated) {
+        context.read<OrderBloc>().add(FetchMoreOrdersRequested(authState.user.id));
+      }
+    }
+  }
+
+  bool get _isBottom {
+    if (!_scrollController.hasClients) return false;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    return currentScroll >= (maxScroll * 0.9);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _fetchOrders() {
@@ -107,10 +133,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     onRefresh: _fetchOrdersAsync,
                     color: AppColors.primary,
                     child: ListView.builder(
+                      controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(16),
-                      itemCount: filteredOrders.length,
+                      itemCount: filteredOrders.length + (state.hasReachedMax ? 0 : 1),
                       itemBuilder: (context, index) {
+                        if (index >= filteredOrders.length) {
+                          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                        }
                         final order = filteredOrders[index];
                         return _buildOrderCard(order);
                       },

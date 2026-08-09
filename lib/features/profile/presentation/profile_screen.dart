@@ -9,7 +9,6 @@ import '../../../core/presentation/widgets/logout_button.dart';
 import '../../../core/presentation/widgets/app_dialogs.dart';
 import '../../auth/presentation/map_selection_screen.dart';
 import '../../orders/presentation/orders_screen.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../core/network/api_client.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -23,9 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _addressController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
-  bool _isUploading = false;
   double? _newLatitude;
   double? _newLongitude;
 
@@ -35,6 +32,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _newPasswordController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  void _showAvatarSelectionBottomSheet(BuildContext context) {
+    final avatars = [
+      '/uploads/avatars/male_1.webp',
+      '/uploads/avatars/male_2.webp',
+      '/uploads/avatars/male_3.webp',
+      '/uploads/avatars/male_4.webp',
+      '/uploads/avatars/male_5.webp',
+      '/uploads/avatars/female_1.webp',
+      '/uploads/avatars/female_2.webp',
+      '/uploads/avatars/female_3.webp',
+      '/uploads/avatars/female_4.webp',
+      '/uploads/avatars/female_5.webp',
+    ];
+
+    final currentUser = context.read<AuthBloc>().state is Authenticated 
+        ? (context.read<AuthBloc>().state as Authenticated).user 
+        : null;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          height: 350,
+          color: const Color(0xFF1E293B), // Match dark theme
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Choose an Avatar',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: avatars.length,
+                  itemBuilder: (context, index) {
+                    final avatarUrl = avatars[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(bottomSheetContext);
+                        if (currentUser != null) {
+                          context.read<AuthBloc>().add(UpdateProfileImageRequested(avatarUrl));
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: currentUser?.profileImageUrl == avatarUrl
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          backgroundImage: NetworkImage(ApiClient.baseUrl + avatarUrl),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showChangePasswordDialog(BuildContext context, String userId) {
@@ -283,18 +358,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 LogoutButton(),
               ],
             ),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+            body: RefreshIndicator(
+              onRefresh: () async {
+                final bloc = context.read<AuthBloc>();
+                bloc.add(CheckAuthRequested());
+                await bloc.stream.firstWhere((s) => s is Authenticated || s is Unauthenticated);
+              },
+              color: AppColors.primary,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
                   const SizedBox(height: 20),
                   GestureDetector(
-                    onTap: () async {
-                      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                      if (image != null && mounted) {
-                        context.read<AuthBloc>().add(UpdateProfileImageRequested(image.path));
-                      }
-                    },
+                    onTap: () => _showAvatarSelectionBottomSheet(context),
                     child: Stack(
                       children: [
                         CircleAvatar(
@@ -372,6 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           );
         }

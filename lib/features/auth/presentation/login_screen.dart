@@ -18,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
   @override
@@ -81,10 +82,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                         Image.asset(
                           'assets/logo_2.png',
                           width: 80,
@@ -103,19 +106,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 32),
-                        TextField(
+                        TextFormField(
                           controller: _phoneController,
                           style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
-                            labelText: 'Mobile / WhatsApp Number',
-                            prefixIcon: const Icon(Icons.phone, color: AppColors.primary),
+                            labelText: 'Mobile',
+                            prefixIcon: Icon(Icons.phone, color: AppColors.primary),
                             prefixText: '+91 ',
                             prefixStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                           keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your mobile number';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
-                        TextField(
+                        TextFormField(
                           controller: _passwordController,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
@@ -134,6 +143,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           obscureText: _obscurePassword,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 28),
                         ElevatedButton(
@@ -146,16 +161,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             elevation: 4,
                           ),
                           onPressed: () {
-                            final inputPhone = _phoneController.text.trim();
-                            final fullPhone = inputPhone.startsWith('+')
-                                ? inputPhone
-                                : '+91$inputPhone';
-                            context.read<AuthBloc>().add(
-                                  SignInRequested(
-                                    phone: fullPhone,
-                                    password: _passwordController.text.trim(),
-                                  ),
-                                );
+                            if (_formKey.currentState!.validate()) {
+                              final inputPhone = _phoneController.text.trim();
+                              final fullPhone = inputPhone.startsWith('+')
+                                  ? inputPhone
+                                  : '+91$inputPhone';
+                              context.read<AuthBloc>().add(
+                                    SignInRequested(
+                                      phone: fullPhone,
+                                      password: _passwordController.text.trim(),
+                                    ),
+                                  );
+                            }
                           },
                           child: const Text(
                             'SIGN IN',
@@ -190,8 +207,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          );
-        },
+          ),
+        );
+      },
       ),
     );
   }

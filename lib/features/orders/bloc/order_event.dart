@@ -34,6 +34,14 @@ class FetchOrdersRequested extends OrderEvent {
   List<Object?> get props => [userId];
 }
 
+class FetchMoreOrdersRequested extends OrderEvent {
+  final String userId;
+  const FetchMoreOrdersRequested(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}
+
 class CancelOrderRequested extends OrderEvent {
   final String orderId;
   final String userId;

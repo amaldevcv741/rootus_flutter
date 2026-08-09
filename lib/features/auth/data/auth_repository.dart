@@ -119,7 +119,7 @@ class AuthRepository {
     required String address,
     String? email,
     required String password,
-    File? profileImage,
+    String? profileImageUrl,
     double? latitude,
     double? longitude,
   }) async {
@@ -133,6 +133,7 @@ class AuthRepository {
           'address': address,
           'email': email ?? '',
           'password': password,
+          if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
         },
@@ -142,31 +143,6 @@ class AuthRepository {
 
       if (response.statusCode == 201) {
         var user = AppUser.fromJson(response.data['user']);
-        
-        // Upload profile image if provided
-        if (profileImage != null) {
-          try {
-            debugPrint('📝 [AUTH REPO] Uploading profile image for new user');
-            final formData = FormData.fromMap({
-              'image': await MultipartFile.fromFile(
-                profileImage.path,
-                filename: profileImage.path.split('/').last,
-              ),
-            });
-            
-            final imageResponse = await _apiClient.dio.post(
-              '/api/user/${user.id}/profile-image',
-              data: formData,
-            );
-            
-            if (imageResponse.statusCode == 200 && imageResponse.data['profileImageUrl'] != null) {
-              user = user.copyWith(profileImageUrl: imageResponse.data['profileImageUrl']);
-            }
-          } catch (imgError) {
-            debugPrint('⚠️ [AUTH REPO] Profile image upload failed during registration: $imgError');
-            // We don't throw here because registration itself succeeded.
-          }
-        }
         
         await saveSession(user);
         debugPrint('✅ [AUTH REPO] Registration successful for user: ${user.fullName}');
@@ -284,21 +260,17 @@ class AuthRepository {
     }
   }
 
-  Future<String> uploadProfileImage(String userId, String imagePath) async {
+  Future<String> updateProfileImage(String userId, String profileImageUrl) async {
     try {
-      final formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(imagePath, filename: 'profile.webp'),
-      });
-
       final response = await _apiClient.dio.post(
         '/api/user/$userId/profile-image',
-        data: formData,
+        data: { 'profileImageUrl': profileImageUrl },
       );
 
       if (response.statusCode == 200) {
         return response.data['profileImageUrl'];
       }
-      throw Exception('Failed to upload image');
+      throw Exception('Failed to update image');
     } catch (e) {
       if (e is DioException && e.response?.data != null && e.response?.data['error'] != null) {
         throw Exception(e.response!.data['error']);

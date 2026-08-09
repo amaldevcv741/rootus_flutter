@@ -32,9 +32,9 @@ class OrderRepository {
     }
   }
 
-  Future<List<OrderModel>> fetchUserOrders(String userId) async {
+  Future<List<OrderModel>> fetchUserOrders(String userId, {int page = 1, int limit = 10}) async {
     try {
-      final response = await _dio.get('/api/orders/user/$userId');
+      final response = await _dio.get('/api/orders/user/$userId?page=$page&limit=$limit');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => OrderModel.fromJson(json)).toList();

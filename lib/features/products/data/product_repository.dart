@@ -8,10 +8,10 @@ class ProductRepository {
   ProductRepository({ApiClient? apiClient})
       : _apiClient = apiClient ?? ApiClient();
 
-  Future<List<ProductModel>> getProducts() async {
-    debugPrint('🍄 [PRODUCT REPO] Fetching products from GET /api/products...');
+  Future<List<ProductModel>> getProducts({int page = 1, int limit = 10}) async {
+    debugPrint('🍄 [PRODUCT REPO] Fetching products from GET /api/products?page=$page&limit=$limit...');
     try {
-      final response = await _apiClient.dio.get('/api/products');
+      final response = await _apiClient.dio.get('/api/products?page=$page&limit=$limit');
 
       if (response.statusCode == 200) {
         final data = response.data;
