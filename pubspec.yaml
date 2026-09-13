@@ -23,6 +23,7 @@ dependencies:
   firebase_core: ^4.10.0
   firebase_auth: ^6.5.2
   firebase_messaging: ^16.3.0 # For push notifications
+  flutter_local_notifications: ^18.0.1
 
   # UI & Utilities
   google_fonts: ^6.1.0

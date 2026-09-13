@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'firebase_options.dart';
+import 'core/services/firebase_messaging_service.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/bloc/auth_event.dart';
@@ -19,11 +20,15 @@ import 'features/orders/data/order_repository.dart';
 import 'features/orders/bloc/order_bloc.dart';
 import 'core/presentation/main_layout.dart';
 
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseMessagingService.navigatorKey = globalNavigatorKey;
+  await FirebaseMessagingService.initialize();
   runApp(const MyApp());
 }
 
@@ -60,6 +65,7 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+          navigatorKey: globalNavigatorKey,
           title: 'ROOTUS',
           debugShowCheckedModeBanner: false,
           themeMode: ThemeMode.dark,

@@ -3,6 +3,8 @@ import '../data/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 import '../../../../core/network/error_handler.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository authRepository;
@@ -13,6 +15,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final user = await authRepository.getPersistedSession();
       if (user != null) {
         emit(Authenticated(user));
+        // Update FCM Token on startup
+        FirebaseMessagingService.getToken().then((token) {
+          if (token != null) {
+             authRepository.updateFCMToken(user.id, token);
+          }
+        });
       } else {
         emit(Unauthenticated());
       }

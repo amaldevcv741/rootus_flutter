@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/firebase_messaging_service.dart';
 
 class AppUser {
   final String id;
@@ -85,11 +86,13 @@ class AuthRepository {
   }) async {
     debugPrint('🔑 [AUTH REPO] Attempting login for phone: $phone');
     try {
+      final fcmToken = await FirebaseMessagingService.getToken();
       final response = await _apiClient.dio.post(
         '/api/auth/login',
         data: {
           'phone': phone,
           'password': password,
+          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       );
 
@@ -125,6 +128,7 @@ class AuthRepository {
   }) async {
     debugPrint('📝 [AUTH REPO] Attempting registration for phone: $phone');
     try {
+      final fcmToken = await FirebaseMessagingService.getToken();
       final response = await _apiClient.dio.post(
         '/api/auth/register',
         data: {
@@ -136,6 +140,7 @@ class AuthRepository {
           if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
+          if (fcmToken != null) 'fcmToken': fcmToken,
         },
       );
 
@@ -276,6 +281,18 @@ class AuthRepository {
         throw Exception(e.response!.data['error']);
       }
       throw Exception('Upload failed: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateFCMToken(String userId, String fcmToken) async {
+    try {
+      await _apiClient.dio.put(
+        '/api/user/$userId/fcm-token',
+        data: { 'fcmToken': fcmToken },
+      );
+      debugPrint('✅ [AUTH REPO] Successfully updated FCM token on backend');
+    } catch (e) {
+      debugPrint('⚠️ [AUTH REPO] Failed to update FCM token: $e');
     }
   }
 }
