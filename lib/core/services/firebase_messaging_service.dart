@@ -15,14 +15,6 @@ class FirebaseMessagingService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
-    // Request permission
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    debugPrint('User granted permission: ${settings.authorizationStatus}');
-
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Setup local notifications for foreground display
@@ -95,6 +87,21 @@ class FirebaseMessagingService {
     }
   }
 
+  static Future<NotificationSettings?> requestPermission() async {
+    try {
+      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      debugPrint('User granted notification permission: ${settings.authorizationStatus}');
+      return settings;
+    } catch (e) {
+      debugPrint('Error requesting notification permission: $e');
+      return null;
+    }
+  }
+
   static Future<String?> getToken() async {
     try {
       final token = await _firebaseMessaging.getToken();
@@ -109,7 +116,7 @@ class FirebaseMessagingService {
 
 class _BottomSheetNotificationWidget extends StatefulWidget {
   final RemoteNotification notification;
-  const _BottomSheetNotificationWidget({Key? key, required this.notification}) : super(key: key);
+  const _BottomSheetNotificationWidget({super.key, required this.notification});
 
   @override
   State<_BottomSheetNotificationWidget> createState() => _BottomSheetNotificationWidgetState();
@@ -146,10 +153,10 @@ class _BottomSheetNotificationWidgetState extends State<_BottomSheetNotification
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
+          Center(
             child: Text(
-              'Order Update',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              widget.notification.title ?? 'Notification',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
           const SizedBox(height: 16),
@@ -168,7 +175,7 @@ class _BottomSheetNotificationWidgetState extends State<_BottomSheetNotification
                 ),
               ),
               child: const Text(
-                'Cancel',
+                'OK',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
             ),

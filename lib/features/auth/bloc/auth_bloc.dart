@@ -36,6 +36,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         if (user != null) {
           emit(Authenticated(user));
+          // Ask for notification permission only after successful login
+          try {
+            await FirebaseMessagingService.requestPermission();
+            final token = await FirebaseMessagingService.getToken();
+            if (token != null) {
+              await authRepository.updateFCMToken(user.id, token);
+            }
+          } catch (e) {
+            debugPrint("Notification permission/token error post-login: $e");
+          }
         } else {
           emit(const AuthError('Login failed: Invalid response'));
         }
@@ -60,6 +70,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         if (user != null) {
           emit(Authenticated(user));
+          // Ask for notification permission only after successful signup/login
+          try {
+            await FirebaseMessagingService.requestPermission();
+            final token = await FirebaseMessagingService.getToken();
+            if (token != null) {
+              await authRepository.updateFCMToken(user.id, token);
+            }
+          } catch (e) {
+            debugPrint("Notification permission/token error post-signup: $e");
+          }
         } else {
           emit(const AuthError('Registration failed: Invalid response'));
         }
