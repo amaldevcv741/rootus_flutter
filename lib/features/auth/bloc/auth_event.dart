@@ -63,3 +63,13 @@ class UpdateProfileImageRequested extends AuthEvent {
   @override
   List<Object?> get props => [profileImageUrl];
 }
+
+class ResetPasswordRequested extends AuthEvent {
+  final String phone;
+  final String newPassword;
+
+  const ResetPasswordRequested({required this.phone, required this.newPassword});
+
+  @override
+  List<Object?> get props => [phone, newPassword];
+}

@@ -6,6 +6,7 @@ import '../bloc/auth_state.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_state.dart';
 import 'register_screen.dart';
+import 'reset_password_screen.dart';
 import '../../../core/presentation/widgets/app_dialogs.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -197,6 +198,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ResetPasswordScreen(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.push(

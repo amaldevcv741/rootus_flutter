@@ -222,6 +222,35 @@ class AuthRepository {
     }
   }
 
+  Future<void> resetPassword({
+    required String phone,
+    required String newPassword,
+  }) async {
+    debugPrint('🔐 [AUTH REPO] Attempting password reset for phone: $phone');
+    try {
+      final response = await _apiClient.dio.post(
+        '/api/auth/reset-password',
+        data: {
+          'phone': phone,
+          'newPassword': newPassword,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Password reset failed');
+      }
+      debugPrint('✅ [AUTH REPO] Password reset successfully');
+    } catch (e) {
+      debugPrint('❌ [AUTH REPO] Password reset error: $e');
+      if (e is DioException &&
+          e.response?.data != null &&
+          e.response?.data['error'] != null) {
+        throw Exception(e.response!.data['error']);
+      }
+      throw Exception('Failed to reset password: ${e.toString()}');
+    }
+  }
+
   Future<AppUser?> changeAddress(String newAddress, {double? latitude, double? longitude}) async {
     final currentUser = await getPersistedSession();
     if (currentUser == null) throw Exception('Not logged in');

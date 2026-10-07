@@ -10,6 +10,7 @@ import '../../../core/presentation/widgets/app_dialogs.dart';
 import '../../auth/presentation/map_selection_screen.dart';
 import '../../orders/presentation/orders_screen.dart';
 import '../../../core/network/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -343,6 +344,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _launchWhatsApp() async {
+    const adminPhone = "919380462741"; // Admin number (no +)
+    const message = "Hi Rootus Farms, I need help.";
+    final Uri whatsappUrl = Uri.parse("whatsapp://send?phone=$adminPhone&text=${Uri.encodeComponent(message)}");
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open WhatsApp. Please ensure it is installed.'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
@@ -444,6 +461,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       label: const Text('Change Password', style: TextStyle(fontSize: 16, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF334155),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed: _launchWhatsApp,
+                      icon: const Icon(Icons.chat, color: Colors.white),
+                      label: const Text('Chat with us on WhatsApp', style: TextStyle(fontSize: 16, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366), // WhatsApp Green
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
